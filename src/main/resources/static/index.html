@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECI Property Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        #property-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        input, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #f3162c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #f3162c;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ECI Property Manager</h1>
+    <form id="property-form">
+        <input type="text" id="address" placeholder="Address" required />
+        <input type="number" id="price" placeholder="Price" required />
+        <input type="number" id="size" placeholder="Size (sqm)" required />
+        <textarea id="description" placeholder="Description" required></textarea>
+        <button type="submit" id="form-submit-button">Add Property</button>
+    </form>
+
+    <!-- Tabla para mostrar las propiedades -->
+    <table id="property-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Address</th>
+                <th>Price</th>
+                <th>Size</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        let properties = [];
+        let isUpdating = false;
+        let currentPropertyId = null;
+
+        document.getElementById('property-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const property = {
+                address: document.getElementById('address').value,
+                price: parseFloat(document.getElementById('price').value),
+                size: parseFloat(document.getElementById('size').value),
+                description: document.getElementById('description').value
+            };
+
+            if (isUpdating) {
+                updatePropertyInServer(currentPropertyId, property);
+            } else {
+                addPropertyToServer(property);
+            }
+        });
+
+        function addPropertyToServer(property) {
+            fetch('/propertie', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(property)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Property added successfully');
+                loadProperties();
+                resetForm();
+            })
+            .catch(error => {
+                alert('Error adding property: ' + error.message);
+            });
+        }
+
+        function updatePropertyInServer(id, property) {
+            fetch(`/propertie/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(property)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                alert('Property updated successfully');
+                loadProperties();
+                resetForm();
+            })
+            .catch(error => {
+                alert('Error updating property: ' + error.message);
+            });
+        }
+
+        function loadProperties() {
+            fetch('/propertie')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    properties = data;
+                    const tableBody = document.querySelector('#property-table tbody');
+                    tableBody.innerHTML = '';
+                    properties.forEach(property => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${property.propertyID}</td>
+                            <td>${property.address}</td>
+                            <td>$${property.price}</td>
+                            <td>${property.size} sqm</td>
+                            <td>${property.description}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button onclick="prepareUpdate(${property.propertyID})">Update</button>
+                                    <button onclick="deleteProperty(${property.propertyID})">Delete</button>
+                                </div>
+                            </td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                })
+                .catch(error => {
+                    alert('Error loading properties: ' + error.message);
+                });
+        }
+
+        function prepareUpdate(id) {
+            const property = properties.find(p => p.propertyID === id);
+            if (property) {
+                document.getElementById('address').value = property.address;
+                document.getElementById('price').value = property.price;
+                document.getElementById('size').value = property.size;
+                document.getElementById('description').value = property.description;
+                
+                isUpdating = true;
+                currentPropertyId = id;
+                document.getElementById('form-submit-button').innerText = 'Update Property';
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('address').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('size').value = '';
+            document.getElementById('description').value = '';
+
+            isUpdating = false;
+            currentPropertyId = null;
+            document.getElementById('form-submit-button').innerText = 'Add Property';
+        }
+
+        function deleteProperty(id) {
+            if (confirm('Are you sure you want to delete this property?')) {
+                fetch(`/propertie/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    alert('Property deleted successfully');
+                    loadProperties();
+                })
+                .catch(error => {
+                    alert('Error deleting property: ' + error.message);
+                });
+            }
+        }
+
+        loadProperties();
+    </script>
+</body>
+</html>
