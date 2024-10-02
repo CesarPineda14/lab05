@@ -205,6 +205,47 @@ docker run -d -p 80:8080 gestion-propiedades-backend
 
 
 
+# **BONUS**
+
+1. Add pagination to the property listing.
+- Se agregan paginas en las que se muestran maximo 5 propiedades:
+  ![image](https://github.com/user-attachments/assets/530d6d17-81cd-461c-abc9-dad9a6213000)
+  ![image](https://github.com/user-attachments/assets/a657318d-0953-4674-a9b4-1b40782c6cd0)
+
+
+3. Implement search functionality to filter properties by location, price, or size.
+   - filtro de direccion
+
+     ![image](https://github.com/user-attachments/assets/cfbe0bac-34e7-4705-b6c8-9aaeec4a8ab6)
+
+     ![image](https://github.com/user-attachments/assets/4b3ead5a-38df-4294-8bed-0a9088278bd8)
+
+   - filtro de precio
+
+     ![image](https://github.com/user-attachments/assets/cac4e66a-fdf9-487e-b835-625d5ddbe560)
+
+   - filtro de tamaño
+
+     ![image](https://github.com/user-attachments/assets/cbebe97b-1ae0-4041-a4fc-19447e2ab0e7)
+
+
+4. Provide user feedback on successful or failed operations (e.g., success messages, error notifications).
+- Create
+  
+![image](https://github.com/user-attachments/assets/612cd738-61a9-4d27-86d0-02197d93f438)
+
+- Delete
+  
+![image](https://github.com/user-attachments/assets/cfef30a7-ff89-4f80-a4bb-c999b4004446)
+
+- Update
+  
+![image](https://github.com/user-attachments/assets/23530d31-f35e-45de-b44b-d50d0c13ef8e)
+
+
+
+
+   
 
 
 
