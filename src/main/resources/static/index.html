@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ECI Property Manager</title>
     <style>
+        /* Misma estructura y estilos que antes */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
+
         #property-form {
             background: #fff;
             padding: 20px;
@@ -18,45 +21,79 @@
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
-        input, textarea, button {
+
+        input,
+        textarea,
+        button {
             width: 100%;
             padding: 10px;
             margin: 5px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
         button {
             background-color: #f3162c;
             color: white;
             border: none;
             cursor: pointer;
         }
+
         button:hover {
-            background-color: #f3162c;
+            background-color: #d01324;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        table, th, td {
+
+        table,
+        th,
+        td {
             border: 1px solid #ddd;
         }
-        th, td {
+
+        th,
+        td {
             padding: 10px;
             text-align: left;
         }
+
         th {
             background-color: #f2f2f2;
         }
+
         .action-buttons {
             display: flex;
             gap: 10px;
         }
+
+        .filter-row input {
+            width: calc(100% - 20px);
+        }
+        .pagination {
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            background-color: #f3162c;
+            border: none;
+            padding: 5px 10px;
+            color: white;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: #d01324;
+        }
     </style>
 </head>
+
 <body>
     <h1>ECI Property Manager</h1>
+
+    <!-- Formulario para agregar propiedades -->
     <form id="property-form">
         <input type="text" id="address" placeholder="Address" required />
         <input type="number" id="price" placeholder="Price" required />
@@ -64,6 +101,17 @@
         <textarea id="description" placeholder="Description" required></textarea>
         <button type="submit" id="form-submit-button">Add Property</button>
     </form>
+
+    <!-- Filtros -->
+    <div id="filter-form">
+        <h3>Filters</h3>
+        <input type="text" id="filter-address" placeholder="Filter by Address" />
+        <input type="number" id="filter-min-price" placeholder="Min Price" />
+        <input type="number" id="filter-max-price" placeholder="Max Price" />
+        <input type="number" id="filter-min-size" placeholder="Min Size (sqm)" />
+        <input type="number" id="filter-max-size" placeholder="Max Size (sqm)" />
+        <button id="filter-button">Apply Filters</button>
+    </div>
 
     <!-- Tabla para mostrar las propiedades -->
     <table id="property-table">
@@ -80,10 +128,14 @@
         <tbody></tbody>
     </table>
 
+    <div class="pagination" id="pagination-controls"></div>
+
     <script>
         let properties = [];
         let isUpdating = false;
         let currentPropertyId = null;
+        const itemsPerPage = 5; // Define how many items to display per page
+        let currentPage = 1;
 
         document.getElementById('property-form').addEventListener('submit', function (e) {
             e.preventDefault();
@@ -156,75 +208,122 @@
                 })
                 .then(data => {
                     properties = data;
-                    const tableBody = document.querySelector('#property-table tbody');
-                    tableBody.innerHTML = '';
-                    properties.forEach(property => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${property.propertyID}</td>
-                            <td>${property.address}</td>
-                            <td>$${property.price}</td>
-                            <td>${property.size} sqm</td>
-                            <td>${property.description}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button onclick="prepareUpdate(${property.propertyID})">Update</button>
-                                    <button onclick="deleteProperty(${property.propertyID})">Delete</button>
-                                </div>
-                            </td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
+                    currentPage = 1; // Reset to the first page on load
+                    applyFilters(); // Se aplica el filtrado al cargar
                 })
                 .catch(error => {
                     alert('Error loading properties: ' + error.message);
                 });
         }
 
-        function prepareUpdate(id) {
-            const property = properties.find(p => p.propertyID === id);
-            if (property) {
-                document.getElementById('address').value = property.address;
-                document.getElementById('price').value = property.price;
-                document.getElementById('size').value = property.size;
-                document.getElementById('description').value = property.description;
-                
-                isUpdating = true;
-                currentPropertyId = id;
-                document.getElementById('form-submit-button').innerText = 'Update Property';
+        function applyFilters() {
+            const filteredProperties = properties.filter(property => {
+                const address = document.getElementById('filter-address').value.toLowerCase();
+                const minPrice = parseFloat(document.getElementById('filter-min-price').value) || 0;
+                const maxPrice = parseFloat(document.getElementById('filter-max-price').value) || Infinity;
+                const minSize = parseFloat(document.getElementById('filter-min-size').value) || 0;
+                const maxSize = parseFloat(document.getElementById('filter-max-size').value) || Infinity;
+
+                return property.address.toLowerCase().includes(address) &&
+                       property.price >= minPrice &&
+                       property.price <= maxPrice &&
+                       property.size >= minSize &&
+                       property.size <= maxSize;
+            });
+
+            displayProperties(filteredProperties);
+        }
+
+        function displayProperties(propertiesToDisplay) {
+            const tableBody = document.querySelector('#property-table tbody');
+            tableBody.innerHTML = '';
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedProperties = propertiesToDisplay.slice(start, end);
+
+            paginatedProperties.forEach(property => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${property.propertyID}</td>
+                    <td>${property.address}</td>
+                    <td>$${property.price}</td>
+                    <td>${property.size} sqm</td>
+                    <td>${property.description}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button onclick="prepareUpdate(${property.propertyID})">Update</button>
+                            <button onclick="deleteProperty(${property.propertyID})">Delete</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            setupPagination(propertiesToDisplay.length);
+        }
+
+        function setupPagination(totalItems) {
+            const paginationControls = document.getElementById('pagination-controls');
+            paginationControls.innerHTML = '';
+
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.innerText = i;
+                button.disabled = (i === currentPage);
+                button.onclick = () => {
+                    currentPage = i;
+                    applyFilters(); // Reapply filters to display the correct page
+                };
+                paginationControls.appendChild(button);
             }
         }
 
-        function resetForm() {
-            document.getElementById('address').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('size').value = '';
-            document.getElementById('description').value = '';
+        document.getElementById('filter-button').addEventListener('click', function () {
+            applyFilters();
+        });
 
+        function resetForm() {
+            document.getElementById('property-form').reset();
             isUpdating = false;
             currentPropertyId = null;
             document.getElementById('form-submit-button').innerText = 'Add Property';
         }
 
-        function deleteProperty(id) {
-            if (confirm('Are you sure you want to delete this property?')) {
-                fetch(`/propertie/${id}`, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    alert('Property deleted successfully');
-                    loadProperties();
-                })
-                .catch(error => {
-                    alert('Error deleting property: ' + error.message);
-                });
+        function prepareUpdate(propertyID) {
+            const property = properties.find(prop => prop.propertyID === propertyID);
+            if (property) {
+                document.getElementById('address').value = property.address;
+                document.getElementById('price').value = property.price;
+                document.getElementById('size').value = property.size;
+                document.getElementById('description').value = property.description;
+                isUpdating = true;
+                currentPropertyId = propertyID;
+                document.getElementById('form-submit-button').innerText = 'Update Property';
             }
         }
 
-        loadProperties();
+        function deleteProperty(propertyID) {
+            if (confirm('Are you sure you want to delete this property?')) {
+                fetch(`/propertie/${propertyID}`, { method: 'DELETE' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        alert('Property deleted successfully');
+                        loadProperties();
+                    })
+                    .catch(error => {
+                        alert('Error deleting property: ' + error.message);
+                    });
+            }
+        }
+
+        // Load properties on page load
+        window.onload = loadProperties;
+    </script>
     </script>
 </body>
+
 </html>

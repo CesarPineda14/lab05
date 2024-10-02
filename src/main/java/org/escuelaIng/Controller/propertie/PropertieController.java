@@ -41,4 +41,15 @@ public class PropertieController {
         propertieService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/search")
+    public ArrayList<Propertie> searchProperties(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Double minSize,
+            @RequestParam(required = false) Double maxSize
+    ) {
+        return propertieService.searchProperties(location, minPrice, maxPrice, minSize, maxSize);
+    }
 }

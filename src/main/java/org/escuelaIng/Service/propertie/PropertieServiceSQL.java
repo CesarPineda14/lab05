@@ -6,6 +6,7 @@ import org.escuelaIng.repository.propertie.PropertieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,5 +59,12 @@ public class PropertieServiceSQL implements PropertieService {
                     existingPropertie.setDescription(propertie.getDescription());
                     return propertieRepository.save(existingPropertie);
                 }).orElse(null);
+    }
+
+
+    @Override
+    public ArrayList<Propertie> searchProperties(String location, Double minPrice, Double maxPrice, Double minSize,
+            Double maxSize) {
+                return propertieRepository.searchProperties(location, minPrice, maxPrice, minSize, maxSize);
     }
 }
